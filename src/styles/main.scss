@@ -1,7 +1,7 @@
 html,body{
   width: 100%;
   height: 100%;
-  background-color: #222;
+  background-color: rgba(0,0,0,0.03);
 }
 
 .content{
@@ -21,7 +21,28 @@ html,body{
   width: 100%;
   height: 100%;
   overflow: hidden;
-  border-color: #ddd;
+  background-color: #ddd;
+  @at-root{
+    .img-figure{
+      width: 320px;
+      height: 360px;
+      margin:0;
+      padding: 40px;
+      position: absolute;
+      background-color: white;
+      box-sizing: border-box;
+      transition: all .6s cubic-bezier(0.18, 0.89, 0.38, 1.04);
+    }
+    figcaption{
+      text-align: center;
+      .img-title{
+        margin:20px 0 0 0;
+        color: #a7a0a2;
+        font-size: 16px;
+      }
+    }
+  }
+
 }
 
 .controller-nav{
