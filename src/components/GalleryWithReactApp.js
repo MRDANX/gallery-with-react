@@ -20,20 +20,46 @@ imageDatas = (function getImageURL(imageDatasArr) {
 function getRangeRandom(low, high) {
   return Math.ceil(Math.random() * (high - low) + low);
 }
+function getRandomDeg(min, max) {
+  return (Math.ceil(Math.random() * (max - min)) + min);
+}
 var ImgFigure = React.createClass({
+  handleClick: function () {
+    if(this.props.arrange.isCenter){
+      this.props.inverse();
+    }else{
+      this.props.center();
+    }
+  },
   render: function () {
 
     var styleObj = {};
-
     if(this.props.arrange.pos){
       styleObj = this.props.arrange.pos;
     }
+    if(this.props.arrange.rotate){
+      ['-moz-', '-webkit-', '-ms-', ''].forEach(function (value) {
+            styleObj[value + 'transform'] = 'rotate(' + this.props.arrange.rotate + 'deg)';
+      }.bind(this));
+    }
+
+    var className = 'img-figure';
+    if(this.props.arrange.isInverse){
+      className += ' img-inverse';
+    }
+    if(this.props.arrange.isCenter){
+      className += ' img-center';
+    }
+
     return (
-        <figure className="img-figure" style={styleObj}>
+        <figure className={className} style={styleObj} onClick={this.handleClick}>
           <img src={this.props.data.imageURL} alt={this.props.data.title}/>
           <figcaption>
             <h2 className="img-title">{this.props.data.title}</h2>
           </figcaption>
+          <div className="img-back">
+              {this.props.data.desc}
+          </div>
         </figure>
     );
   }
@@ -85,9 +111,10 @@ var GalleryWithReactApp = React.createClass({
     this.Constant.vPosRange.topY[1] = halfStageH - halfImgH * 3;
     this.Constant.vPosRange.x[0] = halfStageW - imgW;
     this.Constant.vPosRange.x[1] = halfStageW;
-    setInterval(function () {
-      this.rearrange(Math.random() * 16);
-    }.bind(this), 2000);
+    this.rearrange(Math.random() * 16);
+    // setInterval(function () {
+    //   this.rearrange(Math.random() * 16);
+    // }.bind(this), 2000);
   },
   rearrange: function (centerIndex) {
     var imgsArrangeArr = this.state.imgsArrangeArr,
@@ -105,15 +132,24 @@ var GalleryWithReactApp = React.createClass({
         topImgSpliceIndex = 0,
         imgsArrangeCenterArr = imgsArrangeArr.splice(centerIndex, 1);
 
-        imgsArrangeCenterArr[0].pos = centerPos;
-
+        imgsArrangeCenterArr[0] = {
+          pos: centerPos,
+          rotate: 0,
+          isCenter: true,
+          isInverse: false
+        };
         topImgSpliceIndex = Math.ceil(Math.random() * (imgsArrangeArr.length - topImgNum));
         imgsArrangeTopArr = imgsArrangeArr.splice(topImgSpliceIndex, topImgNum);
 
         imgsArrangeTopArr.forEach(function (value, index) {
-          imgsArrangeTopArr[index].pos = {
-            top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
-            left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
+          imgsArrangeTopArr[index] = {
+            pos: {
+              top: getRangeRandom(vPosRangeTopY[0], vPosRangeTopY[1]),
+              left: getRangeRandom(vPosRangeX[0], vPosRangeX[1])
+            },
+            rotate: getRandomDeg(50, 150),
+            isCenter: false,
+            isInverse: false
           };
         });
 
@@ -126,9 +162,14 @@ var GalleryWithReactApp = React.createClass({
             hPosRangeLORX = hPosRangeRightSecX;
           }
 
-          imgsArrangeArr[i].pos = {
-            top: getRangeRandom(hPosRangeY[0], hPosRangeY[1]),
-            left: getRangeRandom(hPosRangeLORX[0], hPosRangeLORX[1])
+          imgsArrangeArr[i] = {
+            pos: {
+              top: getRangeRandom(hPosRangeY[0], hPosRangeY[1]),
+              left: getRangeRandom(hPosRangeLORX[0], hPosRangeLORX[1])
+            },
+            rotate: getRandomDeg(50, 150),
+            isCenter: false,
+            isInverse: false
           };
         }
 
@@ -149,10 +190,32 @@ var GalleryWithReactApp = React.createClass({
         //   pos: {
         //     left: 0,
         //     top: 0;
-        //   }
+        //   },
+        //  rotete: 0,
+        //  isInverse: false,
+        //  isCenter: false
         // }
       ]
     };
+  },
+  inverse: function (index) {
+    return function () {
+      var imgsArrangeArr = this.state.imgsArrangeArr;
+      imgsArrangeArr[index].isInverse = !imgsArrangeArr[index].isInverse;
+      this.setState({
+        imgsArrangeArr: imgsArrangeArr
+      });
+    }.bind(this);
+  },
+  center: function (index) {
+    return function () {
+      var imgsArrangeArr = this.state.imgsArrangeArr;
+      imgsArrangeArr[index].isCenter = !imgsArrangeArr[index].isCenter;
+      this.setState({
+        imgsArrangeArr: imgsArrangeArr
+      });
+      this.rearrange(index);
+    }.bind(this);
   },
   render: function() {
 
@@ -165,10 +228,17 @@ var GalleryWithReactApp = React.createClass({
               pos: {
                 left: 0,
                 top: 0
-              }
+              },
+              rotate: 0,
+              isInverse: false,
+              isCenter: false
             };
           }
-          imgFigures.push(<ImgFigure data={value} ref={'imgFigure' + index} arrange={this.state.imgsArrangeArr[index]}/>);
+          imgFigures.push(<ImgFigure data={value}
+                            ref={'imgFigure' + index}
+                            arrange={this.state.imgsArrangeArr[index]}
+                            inverse={this.inverse(index)}
+                            center={this.center(index)}/>);
         }.bind(this));
     return (
         <section className="stage" ref="stage">
